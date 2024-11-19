@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora con GLC</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=M+PLUS+1p&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap"
+        rel="stylesheet">
+</head>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #e5e5e5;
+        font-family: "M PLUS 1p", serif;
+        font-weight: 400;
+        font-style: normal;
+    }
+
+    .contTree {
+        padding: 20px;
+    }
+
+    #tree {
+        padding: 20px;
+    }
+
+    /* Estilo para la calculadora */
+    .calculator {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        max-width: 200px;
+        margin: 20px auto;
+    }
+
+    .calculator button {
+        padding: 15px;
+        font-size: 18px;
+        cursor: pointer;
+    }
+
+    input[name="expression"] {
+        width: 90%;
+        padding: 10px;
+        margin-bottom: 10px;
+        font-size: 18px;
+        border-radius: 10px;
+    }
+
+    .contCalc {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .ContBtn {
+        display: flex;
+        justify-content: center;
+    }
+
+    .ContRow {
+        display: flex;
+        width: 100%;
+        justify-content: center;
+    }
+
+    button {
+        padding: 10px;
+        font-size: 16px;
+        cursor: pointer;
+        background-color: azure;
+        border-radius: 10px;
+        font-family: "M PLUS 1p", serif;
+        font-weight: 400;
+        font-style: normal;
+    }
+
+    .btnDelete {
+        background-color: crimson;
+        color: azure;
+        margin-top: 5px;
+        text-decoration: none;
+    }
+
+    .btnExec {
+        background-color: green;
+        color: azure;
+        font-size: 22px;
+        margin-top: 10px;
+        width: 6em;
+    }
+
+    .ContPad {
+        background-color: #14213d;
+        padding: 20px;
+        border-radius: 10px;
+        -webkit-box-shadow: 1px 1px 15px 8px rgba(0, 0, 0, 0.75);
+        -moz-box-shadow: 1px 1px 15px 8px rgba(0, 0, 0, 0.75);
+        box-shadow: 1px 1px 15px 8px rgba(0, 0, 0, 0.75)
+    }
+
+    .ContArbol {
+        
+        margin-left: 2em;
+        border-radius: 10px;
+        -webkit-box-shadow: 1px 1px 15px 8px rgba(0, 0, 0, 0.75);
+        -moz-box-shadow: 1px 1px 15px 8px rgba(0, 0, 0, 0.75);
+        box-shadow: 1px 1px 15px 8px rgba(0, 0, 0, 0.75)
+    }
+
+    h1,
+    h2 {
+        text-align: center;
+    }
+</style>
+
+<body>
+    <h1>Calculadora -- Gramática Libre de Contexto</h1>
+    <div class="ContRow">
+        <div class="ContPad">
+            <div class="contCalc">
+                <form method="post">
+                    <input type="text" id="expressionInput" name="expression" placeholder="Escribe una expresión"
+                        required readonly>
+                    <div class="ContBtn">
+                        <button type="submit" class="btnExec">Calcular</button>
+                    </div>
+                </form>
+
+                {% if result is not none %}
+                <h2 style="color: azure;">Resultado: {{ result }}</h2>
+                {% endif %}
+            </div>
+
+         
+            <div class="calculator">
+           
+                <button onclick="appendToExpression('7')">7</button>
+                <button onclick="appendToExpression('8')">8</button>
+                <button onclick="appendToExpression('9')">9</button>
+                <button onclick="appendToExpression('/')">/</button>
+
+                <button onclick="appendToExpression('4')">4</button>
+                <button onclick="appendToExpression('5')">5</button>
+                <button onclick="appendToExpression('6')">6</button>
+                <button onclick="appendToExpression('*')">*</button>
+
+                <button onclick="appendToExpression('1')">1</button>
+                <button onclick="appendToExpression('2')">2</button>
+                <button onclick="appendToExpression('3')">3</button>
+                <button onclick="appendToExpression('-')">-</button>
+
+                <button onclick="appendToExpression('0')">0</button>
+
+                <button onclick="appendToExpression('+')">+</button>
+
+            </div>
+            <div class="ContBtn">
+                <button onclick="removeLastCharacter('.')" class="btnDelete">Eliminar</button>
+            </div>
+        </div>
+
+        <div class="ContArbol">
+            <h2>Árbol Sintáctico</h2>
+            <div class="contTree" id="tree"></div>
+        </div>
+    </div>
+
+
+
+
+    <script>
+        function appendToExpression(value) {
+            const input = document.getElementById("expressionInput");
+            input.value += value;
+        }
+
+        function removeLastCharacter(value) {
+            const input = document.getElementById("expressionInput");
+            input.value = input.value.slice(0, -1);;
+        }
+
+
+       
+        function clearExpression() {
+            const input = document.getElementById("expressionInput");
+            input.value = "";
+        }
+
+      
+        const treeData = {{ tree_data | tojson }};
+
+       
+        const width = 600;
+        const height = 500;
+        const svg = d3.select("#tree")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+    
+        const treeLayout = d3.tree().size([width - 100, height - 100]);
+        const root = d3.hierarchy(treeData);
+
+         
+        treeLayout(root);
+        svg.selectAll('line')
+            .data(root.links())
+            .enter()
+            .append('line')
+            .attr('x1', d => d.source.x)
+            .attr('y1', d => d.source.y)
+            .attr('x2', d => d.target.x)
+            .attr('y2', d => d.target.y)
+            .attr('stroke', '#000');
+
+        svg.selectAll('circle')
+            .data(root.descendants())
+            .enter()
+            .append('circle')
+            .attr('cx', d => d.x)
+            .attr('cy', d => d.y)
+            .attr('r', 25)
+            .attr('fill', '#fca311');
+
+        svg.selectAll('text')
+            .data(root.descendants())
+            .enter()
+            .append('text')
+            .attr('x', d => d.x)
+            .attr('y', d => d.y)
+            .attr('dy', 10)
+            .attr('dx', -10)
+            .text(d => d.data.name);
+    </script>
+</body>
+
+</html>
